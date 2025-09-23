@@ -26,7 +26,7 @@ const ProductList = () => {
     category: "",
     brand: "",
     subcategory: "",
-    stockQuantity: "" // ADDED STOCK QUANTITY
+    stockQuantity: ""
   });
   const [editLoading, setEditLoading] = useState(false);
   
@@ -43,29 +43,24 @@ const ProductList = () => {
       else setLoading(true);
       
       const token = await getToken();
-      
-      // 👇 FIX 1: Add timestamp to prevent caching
-      const timestamp = Date.now();
       const url = searchQuery 
-        ? `/api/product/seller-list?search=${encodeURIComponent(searchQuery)}&t=${timestamp}`
-        : `/api/product/seller-list?t=${timestamp}`;
+        ? `/api/product/seller-list?search=${encodeURIComponent(searchQuery)}&t=${Date.now()}`
+        : `/api/product/seller-list?t=${Date.now()}`;
 
       const { data } = await axios.get(url, { 
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache' // 👈 FIX 2: Add cache control
-        } 
+        headers: { Authorization: `Bearer ${token}` } 
       });
 
       if (data.success) {
         setProducts(data.products);
+        setLoading(false);
+        setSearchLoading(false);
       } else {
         toast.error(data.message);
+        setSearchLoading(false);
       }
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setLoading(false);
       setSearchLoading(false);
     }
   };
@@ -90,7 +85,7 @@ const ProductList = () => {
       category: product.category,
       brand: product.brand,
       subcategory: product.subcategory,
-      stockQuantity: product.stockQuantity || 0 // ADDED STOCK QUANTITY
+      stockQuantity: product.stockQuantity || 0
     });
     setNewImages([]);
     setNewVideo(null);
@@ -112,7 +107,7 @@ const ProductList = () => {
       category: "",
       brand: "",
       subcategory: "",
-      stockQuantity: "" // ADDED STOCK QUANTITY
+      stockQuantity: ""
     });
     setNewImages([]);
     setNewVideo(null);
@@ -151,7 +146,7 @@ const ProductList = () => {
   // Handle video selection
   const handleVideoSelect = (e) => {
     const file = e.target.files[0];
-    if (file && file.size > 50 * 1024 * 1024) { // 50MB limit
+    if (file && file.size > 50 * 1024 * 1024) {
       toast.error("Video size should be less than 50MB");
       return;
     }
@@ -193,10 +188,7 @@ const ProductList = () => {
       const token = await getToken();
       const formData = new FormData();
 
-      // Add product ID
       formData.append('productId', editingProduct._id);
-
-      // Append basic fields
       formData.append('name', editForm.name);
       formData.append('description', editForm.description);
       formData.append('price', editForm.price);
@@ -204,24 +196,20 @@ const ProductList = () => {
       formData.append('category', editForm.category);
       formData.append('brand', editForm.brand);
       formData.append('subcategory', editForm.subcategory);
-      formData.append('stockQuantity', editForm.stockQuantity); // ADDED STOCK QUANTITY
+      formData.append('stockQuantity', editForm.stockQuantity);
 
-      // Append images to delete
       imagesToDelete.forEach(imageUrl => {
         formData.append('imagesToDelete', imageUrl);
       });
 
-      // Append video deletion flag
       if (videoToDelete) {
         formData.append('deleteVideo', 'true');
       }
 
-      // Append new images
       newImages.forEach(image => {
         formData.append('images', image);
       });
 
-      // Append new video
       if (newVideo) {
         formData.append('video', newVideo);
       }
@@ -239,8 +227,7 @@ const ProductList = () => {
 
       if (data.success) {
         toast.success('Product updated successfully!');
-        // 👇 FIX 3: Force refresh after edit
-        await fetchSellerProduct(searchTerm);
+        fetchSellerProduct(searchTerm);
         closeEditModal();
       } else {
         toast.error(data.message);
@@ -255,17 +242,16 @@ const ProductList = () => {
 
   // Delete Product
   const deleteProduct = async (productId, productName) => {
-    if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) return;
+    if (!confirm(`Are you sure you want to delete "${productName}"?`)) return;
 
     try {
       const token = await getToken();
-      const { data } = await axios.delete(`/api/product/seller-list?id=${productId}`, {
+      const { data } = await axios.delete(`/api/product/seller-list?id=${productId}&t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (data.success) {
         toast.success('Product deleted successfully!');
-        // 👇 FIX 4: Force refresh after delete
         fetchSellerProduct(searchTerm);
       } else {
         toast.error(data.message);
@@ -291,7 +277,6 @@ const ProductList = () => {
               <p className="text-gray-600">{products.length} product{products.length !== 1 ? 's' : ''} found</p>
             </div>
             
-            {/* Search Bar */}
             <div className="relative w-full md:w-80">
               <div className="relative">
                 <input
@@ -317,7 +302,6 @@ const ProductList = () => {
             </div>
           </div>
 
-          {/* Products Table - ADD STOCK COLUMN */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -326,7 +310,7 @@ const ProductList = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Category</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Brand</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th> {/* ADDED STOCK COLUMN */}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -427,7 +411,6 @@ const ProductList = () => {
         </div>
       )}
 
-      {/* Edit Product Modal - ADDED STOCK FIELD */}
       {editModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -443,7 +426,6 @@ const ProductList = () => {
               </div>
 
               <form onSubmit={handleEditSubmit} className="space-y-6">
-                {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
@@ -535,11 +517,9 @@ const ProductList = () => {
                   </div>
                 </div>
 
-                {/* Images Section */}
                 <div className="border-t pt-6">
                   <h4 className="text-lg font-medium text-gray-900 mb-4">Product Images</h4>
                   
-                  {/* Existing Images */}
                   {getCurrentImages().length > 0 && (
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-700 mb-3">Current Images</label>
@@ -566,7 +546,6 @@ const ProductList = () => {
                     </div>
                   )}
 
-                  {/* Deleted Images (can be restored) */}
                   {imagesToDelete.length > 0 && (
                     <div className="mb-6 p-3 bg-yellow-50 rounded-lg">
                       <label className="block text-sm font-medium text-yellow-700 mb-3">Removed Images (Click to restore)</label>
@@ -593,11 +572,9 @@ const ProductList = () => {
                     </div>
                   )}
 
-                  {/* New Images */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-3">Add New Images ({newImages.length}/5)</label>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                      {/* New image previews */}
                       {newImages.map((image, index) => (
                         <div key={index} className="relative group">
                           <Image
@@ -617,7 +594,6 @@ const ProductList = () => {
                         </div>
                       ))}
                       
-                      {/* Add image button */}
                       {newImages.length < 5 && (
                         <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -639,11 +615,9 @@ const ProductList = () => {
                   </div>
                 </div>
 
-                {/* Video Section */}
                 <div className="border-t pt-6">
                   <h4 className="text-lg font-medium text-gray-900 mb-4">Product Video</h4>
                   
-                  {/* Current Video */}
                   {getCurrentVideo() && !newVideo && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-3">Current Video</label>
@@ -664,7 +638,6 @@ const ProductList = () => {
                     </div>
                   )}
 
-                  {/* Deleted Video (can be restored) */}
                   {videoToDelete && !newVideo && (
                     <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
                       <label className="block text-sm font-medium text-yellow-700 mb-3">Video Removed</label>
@@ -678,7 +651,6 @@ const ProductList = () => {
                     </div>
                   )}
 
-                  {/* New Video */}
                   {newVideo && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-3">New Video Preview</label>
@@ -699,7 +671,6 @@ const ProductList = () => {
                     </div>
                   )}
 
-                  {/* Add Video Button */}
                   {!newVideo && (
                     <label className="flex flex-col items-center justify-center w-full max-w-md p-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
                       <div className="flex flex-col items-center justify-center">
@@ -720,7 +691,6 @@ const ProductList = () => {
                   )}
                 </div>
 
-                {/* Upload Progress */}
                 {uploadProgress > 0 && uploadProgress < 100 && (
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
@@ -736,7 +706,6 @@ const ProductList = () => {
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex gap-4 pt-4 border-t">
                   <button
                     type="submit"
