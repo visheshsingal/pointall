@@ -133,7 +133,7 @@ export async function PUT(request) {
         }
 
         // Update basic fields
-        const fields = ['name', 'description', 'price', 'offerPrice', 'category', 'brand', 'subcategory']
+        const fields = ['name', 'description', 'price', 'offerPrice', 'category', 'brand', 'subcategory', 'stockQuantity']
         fields.forEach(field => {
             const value = formData.get(field)
             if (value !== null) {

@@ -15,7 +15,7 @@ const AddProduct = () => {
   const [description, setDescription] = useState('');
   
   // Brand, Category, Subcategory states
-  const [brand, setBrand] = useState('Apple');
+  const [brand, setBrand] = useState('Boat');
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   
@@ -26,57 +26,152 @@ const AddProduct = () => {
   
   const [price, setPrice] = useState('');
   const [offerPrice, setOfferPrice] = useState('');
-  const [stockQuantity, setStockQuantity] = useState(''); // New inventory field
+  const [stockQuantity, setStockQuantity] = useState('');
   
   // Custom toggles
   const [useCustomBrand, setUseCustomBrand] = useState(false);
   const [useCustomCategory, setUseCustomCategory] = useState(false);
   const [useCustomSubcategory, setUseCustomSubcategory] = useState(false);
 
-  // Hierarchical data structure
+  // Updated hierarchical data structure with EXACT 10 categories
   const productHierarchy = {
-    'Apple': {
-      'iPhone': ['iPhone 15', 'iPhone 14', 'iPhone 13', 'iPhone SE'],
-      'iPad': ['iPad Pro', 'iPad Air', 'iPad Mini', 'iPad'],
-      'MacBook': ['MacBook Pro', 'MacBook Air', 'MacBook'],
-      'Apple Watch': ['Series 9', 'Series 8', 'SE', 'Ultra'],
-      'AirPods': ['AirPods Pro', 'AirPods Max', 'AirPods'],
-      'Accessories': ['Cases', 'Chargers', 'Cables', 'Adapters']
+    'Boat': {
+      'Handsfree': ['Wired Handsfree', 'Wireless Handsfree', 'Sports Handsfree'],
+      'Earbuds': ['True Wireless Earbuds', 'Wireless Earbuds', 'Noise Cancelling Earbuds'],
+      'Mix Items': ['Combo Packs', 'Accessory Kits', 'Mixed Bundles'],
+      'Car Bluetooth': ['Bluetooth Car Kits', 'FM Transmitters', 'Car Audio Adapters'],
+      'OTG Cables': ['Type-C OTG', 'Micro USB OTG', 'Multi-port OTG'],
+      'Car Chargers': ['Fast Car Chargers', 'Multi-port Car Chargers', 'Wireless Car Chargers'],
+      'Cables and Chargers': ['Type-C Cables', 'Fast Chargers', 'Braided Cables'],
+      'Battery': ['Power Banks', 'Portable Chargers', 'Battery Cases'],
+      'Selfie Sticks': ['Bluetooth Selfie Sticks', 'Wired Selfie Sticks', 'Tripod Selfie Sticks'],
+      'Car and Bike Stand': ['Phone Holders', 'Bike Mounts', 'Dashboard Stands']
+    },
+    'JBL': {
+      'Handsfree': ['Wired Headphones', 'Wireless Headphones', 'Sports Headphones'],
+      'Earbuds': ['JBL True Wireless', 'Sports Earbuds', 'Noise Cancelling'],
+      'Mix Items': ['Speaker Combos', 'Audio Bundles', 'Gift Packs'],
+      'Car Bluetooth': ['Car Audio Systems', 'Bluetooth Receivers'],
+      'OTG Cables': ['Audio OTG Cables', 'Adapter Cables'],
+      'Car Chargers': ['Fast Charging Car Adapters'],
+      'Cables and Chargers': ['Audio Cables', 'Charging Cables'],
+      'Battery': ['Portable Speakers with Power Bank'],
+      'Selfie Sticks': ['Action Camera Accessories'],
+      'Car and Bike Stand': ['Audio System Mounts']
+    },
+    'Sony': {
+      'Handsfree': ['Sony Headphones', 'Noise Cancelling Headphones'],
+      'Earbuds': ['WF Series Earbuds', 'True Wireless', 'Sports Earbuds'],
+      'Mix Items': ['Audio Bundles', 'Entertainment Packs'],
+      'Car Bluetooth': ['Car Audio Systems', 'Bluetooth Car Adapters'],
+      'OTG Cables': ['Audio Adapter Cables'],
+      'Car Chargers': ['Sony Car Chargers'],
+      'Cables and Chargers': ['Premium Cables', 'Fast Chargers'],
+      'Battery': ['Sony Power Banks'],
+      'Selfie Sticks': ['Camera Accessories'],
+      'Car and Bike Stand': ['Car Audio Mounts']
     },
     'Samsung': {
-      'Galaxy Phone': ['Galaxy S24', 'Galaxy S23', 'Galaxy Z Fold', 'Galaxy Z Flip'],
-      'Galaxy Tab': ['Tab S9', 'Tab S8', 'Tab A', 'Tab Active'],
-      'Galaxy Watch': ['Watch 6', 'Watch 5', 'Watch 4', 'Watch FE'],
-      'Galaxy Buds': ['Buds 2 Pro', 'Buds 2', 'Buds Live', 'Buds FE'],
-      'Accessories': ['Cases', 'S-Pens', 'Chargers', 'Covers']
+      'Handsfree': ['Samsung Headphones', 'AKG Headphones'],
+      'Earbuds': ['Galaxy Buds', 'Wireless Earbuds'],
+      'Mix Items': ['Samsung Bundles', 'Mobile Accessory Kits'],
+      'Car Bluetooth': ['Car Connectivity', 'SmartThings Auto'],
+      'OTG Cables': ['Type-C OTG', 'Multi-port Adapters'],
+      'Car Chargers': ['Fast Charge Car Adapters', 'Wireless Car Chargers'],
+      'Cables and Chargers': ['Fast Charging Cables', 'Adaptive Chargers'],
+      'Battery': ['Samsung Power Banks', 'Portable Batteries'],
+      'Selfie Sticks': ['Phone Camera Accessories'],
+      'Car and Bike Stand': ['Car Mounts', 'Phone Holders']
+    },
+    'Mi': {
+      'Handsfree': ['Mi Earphones', 'Basic Headphones'],
+      'Earbuds': ['Mi True Wireless', 'Redmi Earbuds'],
+      'Mix Items': ['Mi Ecosystem Bundles'],
+      'Car Bluetooth': ['Car Bluetooth Adapters'],
+      'OTG Cables': ['Mi OTG Cables', 'Adapter Cables'],
+      'Car Chargers': ['Mi Car Chargers', 'Fast Car Charging'],
+      'Cables and Chargers': ['Mi Cables', 'Fast Chargers'],
+      'Battery': ['Mi Power Banks', '10000mAh/20000mAh'],
+      'Selfie Sticks': ['Mi Selfie Sticks'],
+      'Car and Bike Stand': ['Car Phone Mounts']
+    },
+    'Apple': {
+      'Handsfree': ['AirPods Max', 'Beats Headphones'],
+      'Earbuds': ['AirPods Pro', 'AirPods', 'Beats Earbuds'],
+      'Mix Items': ['Apple Accessory Bundles'],
+      'Car Bluetooth': ['CarPlay Adapters', 'Bluetooth Car Kits'],
+      'OTG Cables': ['Lightning OTG', 'USB-C Adapters'],
+      'Car Chargers': ['MagSafe Car Chargers', 'Lightning Car Chargers'],
+      'Cables and Chargers': ['Lightning Cables', 'USB-C Cables'],
+      'Battery': ['MagSafe Battery Pack', 'Smart Battery Cases'],
+      'Selfie Sticks': ['iPhone Camera Accessories'],
+      'Car and Bike Stand': ['Car Mounts', 'MagSafe Holders']
     },
     'OnePlus': {
-      'Smartphone': ['OnePlus 12', 'OnePlus 11', 'OnePlus Nord', 'OnePlus CE'],
-      'Earphone': ['Buds Pro', 'Buds Z', 'Buds', 'Wireless Bullets'],
-      'Watch': ['Watch 2', 'Watch 1', 'Fitness Band'],
-      'Tablet': ['Pad Go', 'Pad Pro'],
-      'Accessories': ['Cases', 'Chargers', 'Cables', 'Docks']
+      'Handsfree': ['OnePlus Buds', 'Bullets Wireless'],
+      'Earbuds': ['OnePlus Buds Pro', 'True Wireless'],
+      'Mix Items': ['OnePlus Accessory Bundles'],
+      'Car Bluetooth': ['Car Connectivity'],
+      'OTG Cables': ['Type-C OTG Cables'],
+      'Car Chargers': ['Warp Charge Car Chargers'],
+      'Cables and Chargers': ['Warp Charge Cables', 'Fast Chargers'],
+      'Battery': ['OnePlus Power Banks'],
+      'Selfie Sticks': ['Phone Accessories'],
+      'Car and Bike Stand': ['Car Phone Holders']
     },
-    'Google': {
-      'Pixel Phone': ['Pixel 8', 'Pixel 7', 'Pixel 6', 'Pixel A'],
-      'Pixel Watch': ['Watch 2', 'Watch 1'],
-      'Pixel Buds': ['Buds Pro', 'Buds A', 'Buds'],
-      'Nest': ['Nest Hub', 'Nest Mini', 'Nest Audio', 'Nest Cam'],
-      'Accessories': ['Cases', 'Stands', 'Chargers']
+    'Realme': {
+      'Handsfree': ['Realme Buds', 'Wireless Headphones'],
+      'Earbuds': ['Realme True Wireless', 'Buds Air'],
+      'Mix Items': ['Realme Tech Bundles'],
+      'Car Bluetooth': ['Car Audio Adapters'],
+      'OTG Cables': ['Realme OTG Adapters'],
+      'Car Chargers': ['Dart Charge Car Chargers'],
+      'Cables and Chargers': ['Realme Cables', 'Fast Chargers'],
+      'Battery': ['Realme Power Banks'],
+      'Selfie Sticks': ['Mobile Accessories'],
+      'Car and Bike Stand': ['Vehicle Mounts']
     },
-    'Xiaomi': {
-      'Smartphone': ['Mi Series', 'Redmi Series', 'Poco Series'],
-      'Tablets': ['Mi Pad', 'Redmi Pad'],
-      'Smart Watch': ['Mi Band', 'Mi Watch'],
-      'Earphones': ['Mi Earbuds', 'Redmi Earbuds'],
-      'Accessories': ['Power Banks', 'Chargers', 'Cases']
+    'Noise': {
+      'Handsfree': ['Noise Headphones', 'Neckbands'],
+      'Earbuds': ['Noise True Wireless', 'Fit Buds'],
+      'Mix Items': ['Noise Smart Watch Combos'],
+      'Car Bluetooth': ['Bluetooth Car Accessories'],
+      'OTG Cables': ['Adapter Cables'],
+      'Car Chargers': ['Car Charging Adapters'],
+      'Cables and Chargers': ['Charging Accessories'],
+      'Battery': ['Power Banks'],
+      'Selfie Sticks': ['Mobile Photography'],
+      'Car and Bike Stand': ['Smart Mounts']
+    },
+    'Boult': {
+      'Handsfree': ['Boult Headphones', 'Neckbands'],
+      'Earbuds': ['Boult True Wireless', 'Bass Buds'],
+      'Mix Items': ['Audio Combos'],
+      'Car Bluetooth': ['Car Audio'],
+      'OTG Cables': ['Adapter Cables'],
+      'Car Chargers': ['Car Chargers'],
+      'Cables and Chargers': ['Charging Cables'],
+      'Battery': ['Portable Chargers'],
+      'Selfie Sticks': ['Phone Accessories'],
+      'Car and Bike Stand': ['Vehicle Accessories']
     }
   };
 
   // Get categories for selected brand
   const getCategories = () => {
     if (useCustomBrand) return [];
-    return productHierarchy[brand] ? Object.keys(productHierarchy[brand]) : [];
+    return [
+      'Handsfree',
+      'Earbuds', 
+      'Mix Items',
+      'Car Bluetooth',
+      'OTG Cables',
+      'Car Chargers',
+      'Cables and Chargers',
+      'Battery',
+      'Selfie Sticks',
+      'Car and Bike Stand'
+    ];
   };
 
   // Get subcategories for selected category
@@ -118,7 +213,7 @@ const AddProduct = () => {
     formData.append('category', useCustomCategory ? customCategory : category);
     formData.append('price', price);
     formData.append('offerPrice', offerPrice);
-    formData.append('stockQuantity', stockQuantity); // Add stock quantity
+    formData.append('stockQuantity', stockQuantity);
 
     // Append subcategory only if provided
     const finalSubcategory = useCustomSubcategory ? customSubcategory : subcategory;
@@ -177,7 +272,7 @@ const AddProduct = () => {
         setVideos([]);
         setName('');
         setDescription('');
-        setBrand('Apple');
+        setBrand('Boat');
         setCategory('');
         setSubcategory('');
         setCustomBrand('');
@@ -185,7 +280,7 @@ const AddProduct = () => {
         setCustomSubcategory('');
         setPrice('');
         setOfferPrice('');
-        setStockQuantity(''); // Reset stock quantity
+        setStockQuantity('');
         setUseCustomBrand(false);
         setUseCustomCategory(false);
         setUseCustomSubcategory(false);
@@ -528,7 +623,11 @@ const AddProduct = () => {
           </div>
         </div>
 
-        <button type="submit" className="px-8 py-2.5 bg-orange-600 text-white font-medium rounded">
+        {/* Updated Button with #54B1CE color */}
+        <button 
+          type="submit" 
+          className="px-8 py-2.5 bg-[#54B1CE] text-white font-medium rounded hover:bg-[#3a9cb8] transition-colors"
+        >
           ADD PRODUCT
         </button>
       </form>

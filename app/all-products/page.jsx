@@ -16,11 +16,20 @@ const AllProducts = () => {
     
     const [showFilters, setShowFilters] = useState(false);
 
-    // Get unique categories from products
-    const categories = useMemo(() => {
-        const uniqueCategories = Array.from(new Set(products.map(product => product.category)));
-        return ['all', ...uniqueCategories];
-    }, [products]);
+    // Your exact 10 categories - HARDCODED
+    const categories = [
+        'all',
+        'Handsfree',
+        'Earbuds', 
+        'Mix Items',
+        'Car Bluetooth',
+        'OTG Cables',
+        'Car Chargers',
+        'Cables and Chargers',
+        'Battery',
+        'Selfie Sticks',
+        'Car and Bike Stand'
+    ];
 
     // Get min and max price for range slider
     const priceLimits = useMemo(() => {
@@ -29,12 +38,23 @@ const AllProducts = () => {
         return [Math.min(...prices), Math.max(...prices)];
     }, [products]);
 
-    // Update price range when products load
+    // Update price range when products load and handle URL parameters
     useEffect(() => {
         if (products.length > 0) {
             setFilters(prev => ({
                 ...prev,
                 priceRange: priceLimits
+            }));
+        }
+
+        // Handle URL parameters for category filtering
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryFromUrl = urlParams.get('category');
+        
+        if (categoryFromUrl && categories.includes(categoryFromUrl)) {
+            setFilters(prev => ({
+                ...prev,
+                category: categoryFromUrl
             }));
         }
     }, [products, priceLimits]);
@@ -50,7 +70,7 @@ const AllProducts = () => {
             const matchesPrice = product.price >= filters.priceRange[0] && 
                                product.price <= filters.priceRange[1];
             
-            // Category filter
+            // Category filter - exact match with your 10 categories
             const matchesCategory = filters.category === 'all' || product.category === filters.category;
             
             return matchesSearch && matchesPrice && matchesCategory;
@@ -59,7 +79,6 @@ const AllProducts = () => {
         // Sort products
         switch (filters.sortBy) {
             case 'latest':
-                // If you have createdAt field, use it. Otherwise, keep original order.
                 if (filtered[0]?.createdAt) {
                     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 }
@@ -91,6 +110,14 @@ const AllProducts = () => {
 
     const handleCategoryChange = (category) => {
         setFilters(prev => ({ ...prev, category }));
+        // Update URL without page reload
+        const url = new URL(window.location);
+        if (category === 'all') {
+            url.searchParams.delete('category');
+        } else {
+            url.searchParams.set('category', category);
+        }
+        window.history.pushState({}, '', url);
     };
 
     const handleSortChange = (sortBy) => {
@@ -104,6 +131,10 @@ const AllProducts = () => {
             category: 'all',
             sortBy: 'latest'
         });
+        // Clear URL parameters
+        const url = new URL(window.location);
+        url.searchParams.delete('category');
+        window.history.pushState({}, '', url);
     };
 
     return (
@@ -118,6 +149,11 @@ const AllProducts = () => {
                             All <span className="text-[#54B1CE]">Products</span>
                         </p>
                         <div className="w-24 h-1 bg-[#54B1CE] rounded-full mt-1"></div>
+                        {filters.category !== 'all' && (
+                            <p className="text-sm text-gray-600 mt-2">
+                                Filtered by: <span className="font-semibold text-[#54B1CE]">{filters.category}</span>
+                            </p>
+                        )}
                     </div>
 
                     {/* Mobile Filter Toggle */}
@@ -211,10 +247,10 @@ const AllProducts = () => {
                             </div>
                         </div>
 
-                        {/* Category Filter */}
+                        {/* Category Filter - Your 10 Categories */}
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {categories.map(category => (
                                     <label key={category} className="flex items-center space-x-2 cursor-pointer">
                                         <input
@@ -249,7 +285,12 @@ const AllProducts = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <p className="mt-4 text-lg font-medium text-gray-900">No products found</p>
-                                <p className="mt-2 text-gray-600">Try adjusting your filters or search terms</p>
+                                <p className="mt-2 text-gray-600">
+                                    {filters.category !== 'all' 
+                                        ? `No products found in "${filters.category}" category. Try different filters.`
+                                        : 'Try adjusting your filters or search terms'
+                                    }
+                                </p>
                                 <button
                                     onClick={resetFilters}
                                     className="mt-4 bg-[#54B1CE] text-white px-6 py-2 rounded-lg hover:bg-[#3a9cb8] transition-colors"
