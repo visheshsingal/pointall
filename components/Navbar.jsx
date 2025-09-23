@@ -104,6 +104,16 @@ const Navbar = () => {
                 )}
             </div>
 
+            {/* Mobile Menu - Added Home and Shop links */}
+            <div className="flex items-center gap-4 md:hidden">
+                <Link href="/" className="hover:text-[#54B1CE] transition text-sm">
+                    Home
+                </Link>
+                <Link href="/all-products" className="hover:text-[#54B1CE] transition text-sm">
+                    Shop
+                </Link>
+            </div>
+
             {/* Desktop User Menu */}
             <ul className="hidden md:flex items-center gap-4">
                 {/* Search Icon - Desktop */}
@@ -247,28 +257,14 @@ const Navbar = () => {
                 {isSeller && (
                     <button
                         onClick={() => router.push("/seller")}
-                        className="text-xs border border-[#54B1CE] text-[#54B1CE] hover:bg-[#54B1CE] hover:text-white px-4 py-1.5 rounded-full transition"
+                        className="text-xs border border-[#54B1CE] text-[#54B1CE] hover:bg-[#54B1CE] hover:text-white px-3 py-1 rounded-full transition"
                     >
-                        Seller Dashboard
+                        Seller
                     </button>
                 )}
                 {user ? (
                     <>
                         <UserButton>
-                            <UserButton.MenuItems>
-                                <UserButton.Action
-                                    label="Home"
-                                    labelIcon={<HomeIcon />}
-                                    onClick={() => router.push("/")}
-                                />
-                            </UserButton.MenuItems>
-                            <UserButton.MenuItems>
-                                <UserButton.Action
-                                    label="Products"
-                                    labelIcon={<BoxIcon />}
-                                    onClick={() => router.push("/all-products")}
-                                />
-                            </UserButton.MenuItems>
                             <UserButton.MenuItems>
                                 <UserButton.Action
                                     label="Cart"
@@ -293,7 +289,6 @@ const Navbar = () => {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.485 0 4.79.758 6.879 2.047M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        Account
                     </button>
                 )}
             </div>
