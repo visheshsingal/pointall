@@ -40,26 +40,32 @@ const ProductList = () => {
   const fetchSellerProduct = async (searchQuery = "") => {
     try {
       if (searchQuery) setSearchLoading(true);
+      else setLoading(true);
       
       const token = await getToken();
+      
+      // 👇 FIX 1: Add timestamp to prevent caching
+      const timestamp = Date.now();
       const url = searchQuery 
-        ? `/api/product/seller-list?search=${encodeURIComponent(searchQuery)}`
-        : '/api/product/seller-list';
+        ? `/api/product/seller-list?search=${encodeURIComponent(searchQuery)}&t=${timestamp}`
+        : `/api/product/seller-list?t=${timestamp}`;
 
       const { data } = await axios.get(url, { 
-        headers: { Authorization: `Bearer ${token}` } 
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache' // 👈 FIX 2: Add cache control
+        } 
       });
 
       if (data.success) {
         setProducts(data.products);
-        setLoading(false);
-        setSearchLoading(false);
       } else {
         toast.error(data.message);
-        setSearchLoading(false);
       }
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setLoading(false);
       setSearchLoading(false);
     }
   };
@@ -233,7 +239,8 @@ const ProductList = () => {
 
       if (data.success) {
         toast.success('Product updated successfully!');
-        fetchSellerProduct(searchTerm);
+        // 👇 FIX 3: Force refresh after edit
+        await fetchSellerProduct(searchTerm);
         closeEditModal();
       } else {
         toast.error(data.message);
@@ -258,6 +265,7 @@ const ProductList = () => {
 
       if (data.success) {
         toast.success('Product deleted successfully!');
+        // 👇 FIX 4: Force refresh after delete
         fetchSellerProduct(searchTerm);
       } else {
         toast.error(data.message);
@@ -527,7 +535,6 @@ const ProductList = () => {
                   </div>
                 </div>
 
-                {/* ... REST OF THE CODE REMAINS THE SAME (Images and Videos sections) ... */}
                 {/* Images Section */}
                 <div className="border-t pt-6">
                   <h4 className="text-lg font-medium text-gray-900 mb-4">Product Images</h4>
