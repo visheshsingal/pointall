@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import connectDB from "@/config/db";
 import Order from "@/models/Order";
 import { getAuth } from "@clerk/nextjs/server";
