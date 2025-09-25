@@ -2,7 +2,7 @@ import connectDB from '@/config/db'
 import Product from '@/models/Product'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'; // ✅ Keep this
+export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
     try {
@@ -10,27 +10,15 @@ export async function GET(request) {
 
         const products = await Product.find({})
         
-        return NextResponse.json(
-            { success: true, products },
-            {
-                headers: {
-                    'Cache-Control': 'no-store, max-age=0',
-                    'CDN-Cache-Control': 'no-cache',
-                    'Vercel-CDN-Cache-Control': 'no-cache'
-                }
-            }
-        )
+        // Simple headers - remove CDN headers
+        const response = NextResponse.json({ success: true, products });
+        response.headers.set('Cache-Control', 'no-store, max-age=0');
+        
+        return response;
 
     } catch (error) {
-        return NextResponse.json(
-            { success: false, message: error.message },
-            {
-                headers: {
-                    'Cache-Control': 'no-store, max-age=0',
-                    'CDN-Cache-Control': 'no-cache',
-                    'Vercel-CDN-Cache-Control': 'no-cache'
-                }
-            }
-        )
+        const response = NextResponse.json({ success: false, message: error.message });
+        response.headers.set('Cache-Control', 'no-store, max-age=0');
+        return response;
     }
 }
