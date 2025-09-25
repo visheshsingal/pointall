@@ -59,7 +59,7 @@ const ProductCard = ({ product }) => {
             </div>
 
             <div className="flex items-end justify-between w-full mt-2">
-                <p className="text-base font-medium">{currency}{product.offerPrice}</p>
+                <p className="text-base font-medium">₹{product.offerPrice}</p>
                 <button className="px-4 py-1.5 text-gray-500 border border-gray-300 rounded text-xs hover:bg-gray-50">
                     Buy now
                 </button>

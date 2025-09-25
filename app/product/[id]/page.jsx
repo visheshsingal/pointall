@@ -92,13 +92,13 @@ const Product = () => {
             <p className="text-gray-600 text-sm leading-relaxed">{productData.description}</p>
 
             <p className="text-3xl font-semibold text-[#54B1CE]">
-              ${productData.offerPrice}
-              {productData.price > productData.offerPrice && (
-                <span className="text-gray-400 line-through text-base font-normal ml-3">
-                  ${productData.price}
-                </span>
-              )}
-            </p>
+            ₹{productData.offerPrice}
+  {productData.price > productData.offerPrice && (
+    <span className="text-gray-400 line-through text-base font-normal ml-3">
+      ₹{productData.price}
+    </span>
+  )}
+</p>
 
             <hr className="border-gray-200" />
 

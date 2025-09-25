@@ -343,9 +343,9 @@ const ProductList = () => {
                       {product.brand}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="font-semibold text-green-600">${product.offerPrice}</span>
+                      <span className="font-semibold text-green-600">₹{product.offerPrice}</span>
                       {product.price > product.offerPrice && (
-                        <span className="text-xs text-gray-500 line-through ml-2">${product.price}</span>
+                        <span className="text-xs text-gray-500 line-through ml-2">₹{product.price}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -496,7 +496,7 @@ const ProductList = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Original Price ($)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Original Price (₹)</label>
                     <input
                       type="number"
                       value={editForm.price}
@@ -506,7 +506,7 @@ const ProductList = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Offer Price ($)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Offer Price (₹)</label>
                     <input
                       type="number"
                       value={editForm.offerPrice}

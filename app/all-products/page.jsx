@@ -221,7 +221,7 @@ const AllProducts = () => {
                         {/* Price Range Filter */}
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Price Range: ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                                Price Range: ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]}
                             </label>
                             <div className="space-y-2">
                                 <input
@@ -242,8 +242,8 @@ const AllProducts = () => {
                                 />
                             </div>
                             <div className="flex justify-between text-sm text-gray-600 mt-1">
-                                <span>${priceLimits[0]}</span>
-                                <span>${priceLimits[1]}</span>
+                                <span>₹{priceLimits[0]}</span>
+                                <span>₹{priceLimits[1]}</span>
                             </div>
                         </div>
 
