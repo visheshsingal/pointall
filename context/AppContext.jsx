@@ -1,5 +1,5 @@
 // context/AppContext.js
-'use client'
+'use client';
 import { useAuth, useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ export const AppContext = createContext();
 
 export const useAppContext = () => {
   return useContext(AppContext);
-}
+};
 
 export const AppContextProvider = (props) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY;
@@ -48,7 +48,8 @@ export const AppContextProvider = (props) => {
       });
       if (data.success) {
         toast.success('Order placed successfully');
-        await fetchProductData(); // Refetch products to update stock
+        await fetchProductData(); // Refetch products
+        window.dispatchEvent(new Event("orderPlaced")); // Trigger HomeProducts
         return data;
       } else {
         toast.error(data.message);

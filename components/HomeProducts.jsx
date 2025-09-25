@@ -1,9 +1,21 @@
-import React from "react";
+// components/HomeProducts.js
+'use client';
+import React, { useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { useAppContext } from "@/context/AppContext";
 
 const HomeProducts = ({ searchKeyword = "" }) => {
-  const { products, router } = useAppContext();
+  const { products, fetchProductData, router } = useAppContext();
+
+  // Refetch products when an order is placed
+  useEffect(() => {
+    const handleOrderPlaced = () => {
+      console.log("⏳ HomeProducts refetching products:", new Date().toISOString());
+      fetchProductData();
+    };
+    window.addEventListener("orderPlaced", handleOrderPlaced);
+    return () => window.removeEventListener("orderPlaced", handleOrderPlaced);
+  }, [fetchProductData]);
 
   // Filter products based on searchKeyword
   const filteredProducts = products.filter((p) =>
