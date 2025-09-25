@@ -30,7 +30,7 @@ export const AppContextProvider = (props) => {
         cache: 'no-store'
       });
       if (data.success) {
-        setProducts(data.products);
+        setProducts([...data.products]); // ✅ FIXED: Added spread operator
         console.log("✅ Products updated:", data.products.length);
       } else {
         toast.error(data.message);
