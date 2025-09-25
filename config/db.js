@@ -1,31 +1,49 @@
-import mongoose from "mongoose";
+// @/config/db.js
+import mongoose from 'mongoose';
 
-let cached = global.mongoose
+const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!cached) {
-    cached = global.mongoose = { conn: null, promise: null }
+if (!MONGODB_URI) {
+    throw new Error('Please define MONGODB_URI in env');
 }
 
+let cached = global.mongoose || (global.mongoose = { conn: null, promise: null });
+
 async function connectDB() {
-    
     if (cached.conn) {
-        return cached.conn
-    } 
+        console.log("Reusing MongoDB connection");
+        return cached.conn;
+    }
 
     if (!cached.promise) {
         const opts = {
-            bufferCommands:false
-        }
+            bufferCommands: false,
+            connectTimeoutMS: 30000,
+            serverSelectionTimeoutMS: 10000,
+            socketTimeoutMS: 45000,
+            maxPoolSize: 10
+        };
 
-        cached.promise = mongoose.connect(`${process.env.MONGODB_URI}/quickcart`,opts).then( mongoose => {
-            return mongoose
-        })
+        console.log("Connecting to MongoDB...");
+        cached.promise = mongoose.connect(`${MONGODB_URI}`, opts)
+            .then(mongoose => {
+                console.log("MongoDB connected");
+                require('@/models/Address');
+                require('@/models/Order');
+                require('@/models/Product');
+                return mongoose;
+            });
+    }
 
-    } 
+    try {
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null;
+        console.error("MongoDB error:", e.message);
+        throw e;
+    }
 
-    cached.conn = await cached.promise
-    return cached.conn
-
+    return cached.conn;
 }
 
-export default connectDB
+export default connectDB;

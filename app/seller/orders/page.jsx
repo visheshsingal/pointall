@@ -32,41 +32,38 @@ const Orders = () => {
         { value: "failed", label: "Failed", color: "bg-red-100 text-red-800" }
     ];
 
-    const fetchSellerOrders = async () => {
-        try {
-            setLoading(true);
-            const token = await getToken();
-            console.log("Fetching seller orders...");
-            
-            const { data } = await axios.get('/api/order/seller-orders', {
-                headers: { 
-                    Authorization: `Bearer ${token}`,
-                }
-            });
+    // In app/seller/orders/page.jsx, replace fetchSellerOrders
+const fetchSellerOrders = async () => {
+    try {
+        setLoading(true);
+        const token = await getToken();
+        console.log("Fetching orders with token:", token);
 
-            console.log("Orders API response:", JSON.stringify(data, null, 2)); // Debug log
-            if (data.success) {
-                const orders = Array.isArray(data.orders) ? data.orders : [];
-                orders.forEach(order => {
-                    console.log(`Order ${order._id} customer:`, JSON.stringify(order.customer, null, 2)); // Debug log
-                });
-                setOrders(orders);
-            } else {
-                toast.error(data.message || "Failed to fetch orders");
-                setOrders([]);
-            }
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-            const errorMessage = error.response?.data?.message || 
-                               error.message || 
-                               "Failed to fetch orders";
-            toast.error(errorMessage);
+        const { data } = await axios.get('/api/order/seller-orders', {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000
+        });
+
+        console.log("API response:", JSON.stringify(data, null, 2));
+        if (data.success) {
+            setOrders(Array.isArray(data.orders) ? data.orders : []);
+        } else {
+            console.error("API failed:", data.message);
+            toast.error(data.message || "Failed to fetch orders");
             setOrders([]);
-        } finally {
-            setLoading(false);
         }
-    };
-
+    } catch (error) {
+        console.error("Fetch error:", {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+        });
+        toast.error(error.response?.data?.message || "Failed to fetch orders");
+        setOrders([]);
+    } finally {
+        setLoading(false);
+    }
+};
     const updateOrderStatus = async (orderId, newStatus) => {
         try {
             const token = await getToken();
