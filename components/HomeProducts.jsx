@@ -9,6 +9,7 @@ const HomeProducts = ({ searchKeyword = "" }) => {
 
   // Refetch products when an order is placed
   useEffect(() => {
+    console.log("⏳ HomeProducts mounting:", new Date().toISOString());
     const handleOrderPlaced = () => {
       console.log("⏳ HomeProducts refetching products:", new Date().toISOString());
       fetchProductData();
@@ -22,13 +23,15 @@ const HomeProducts = ({ searchKeyword = "" }) => {
     p.name.toLowerCase().includes(searchKeyword.toLowerCase())
   );
 
+  console.log("📋 Filtered products:", filteredProducts.length);
+
   return (
     <div className="flex flex-col items-center pt-14 w-full">
       <p className="text-2xl font-medium text-left w-full">Popular products</p>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 flex-col items-center gap-6 mt-6 pb-14 w-full">
         {filteredProducts.length > 0 ? (
-          filteredProducts.map((product, index) => (
-            <ProductCard key={index} product={product} />
+          filteredProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
           ))
         ) : (
           <p className="text-gray-500 col-span-full mt-4">No products found.</p>

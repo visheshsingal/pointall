@@ -26,7 +26,8 @@ export const AppContextProvider = (props) => {
     try {
       console.log("⏳ Fetching products:", new Date().toISOString());
       const { data } = await axios.get('/api/product/list', {
-        headers: { "Cache-Control": "no-store" }
+        headers: { "Cache-Control": "no-store" },
+        cache: 'no-store'
       });
       if (data.success) {
         setProducts(data.products);
@@ -35,6 +36,7 @@ export const AppContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Product fetch error:", error.message);
       toast.error(error.message);
     }
   };
@@ -55,6 +57,7 @@ export const AppContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Order creation error:", error.message);
       toast.error(error.message);
       throw error;
     }
