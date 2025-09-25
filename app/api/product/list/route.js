@@ -2,8 +2,7 @@ import connectDB from '@/config/db'
 import Product from '@/models/Product'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'; // ✅ Keep this
 
 export async function GET(request) {
     try {
