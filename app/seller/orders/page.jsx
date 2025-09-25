@@ -33,22 +33,21 @@ const Orders = () => {
     ];
 
     // In app/seller/orders/page.jsx, replace fetchSellerOrders
+// In app/seller/orders/page.jsx, replace fetchSellerOrders
 const fetchSellerOrders = async () => {
     try {
         setLoading(true);
         const token = await getToken();
-        console.log("Fetching orders with token:", token);
+        console.log("Fetching orders with token");
 
         const { data } = await axios.get('/api/order/seller-orders', {
             headers: { Authorization: `Bearer ${token}` },
-            timeout: 10000
+            timeout: 15000 // Match Vercel timeout
         });
 
-        console.log("API response:", JSON.stringify(data, null, 2));
         if (data.success) {
             setOrders(Array.isArray(data.orders) ? data.orders : []);
         } else {
-            console.error("API failed:", data.message);
             toast.error(data.message || "Failed to fetch orders");
             setOrders([]);
         }
@@ -63,8 +62,7 @@ const fetchSellerOrders = async () => {
     } finally {
         setLoading(false);
     }
-};
-    const updateOrderStatus = async (orderId, newStatus) => {
+};    const updateOrderStatus = async (orderId, newStatus) => {
         try {
             const token = await getToken();
             
