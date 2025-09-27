@@ -1,6 +1,6 @@
 'use client'
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
 import { useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
