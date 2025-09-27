@@ -16,6 +16,21 @@ const Orders = () => {
     const [filterStatus, setFilterStatus] = useState("all");
     const [cancellingOrder, setCancellingOrder] = useState(null);
     const [cancelReason, setCancelReason] = useState("");
+    const [refundingOrder, setRefundingOrder] = useState(null);
+    const [refundReason, setRefundReason] = useState("");
+    
+    // Sales report states
+    const [salesReport, setSalesReport] = useState({
+        totalSales: 0,
+        paidOrders: 0,
+        pendingOrders: 0,
+        monthlyData: [],
+        dailyData: []
+    });
+    const [dateFilter, setDateFilter] = useState("all"); // all, today, week, month, custom
+    const [customStartDate, setCustomStartDate] = useState("");
+    const [customEndDate, setCustomEndDate] = useState("");
+    const [showSalesReport, setShowSalesReport] = useState(false);
 
     const statusOptions = [
         { value: "Order Placed", label: "Order Placed", color: "bg-yellow-100 text-yellow-800" },
@@ -29,40 +44,201 @@ const Orders = () => {
     const paymentOptions = [
         { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
         { value: "paid", label: "Paid", color: "bg-green-100 text-green-800" },
-        { value: "failed", label: "Failed", color: "bg-red-100 text-red-800" }
+        { value: "failed", label: "Failed", color: "bg-red-100 text-red-800" },
+        { value: "refunded", label: "Refunded", color: "bg-orange-100 text-orange-800" }
     ];
 
-    // In app/seller/orders/page.jsx, replace fetchSellerOrders
-// In app/seller/orders/page.jsx, replace fetchSellerOrders
-const fetchSellerOrders = async () => {
-    try {
-        setLoading(true);
-        const token = await getToken();
-        console.log("Fetching orders with token");
+    const dateFilterOptions = [
+        { value: "all", label: "All Time" },
+        { value: "today", label: "Today" },
+        { value: "week", label: "This Week" },
+        { value: "month", label: "This Month" },
+        { value: "custom", label: "Custom Date Range" }
+    ];
 
-        const { data } = await axios.get('/api/order/seller-orders', {
-            headers: { Authorization: `Bearer ${token}` },
-            timeout: 15000 // Match Vercel timeout
-        });
+    const fetchSellerOrders = async () => {
+        try {
+            setLoading(true);
+            const token = await getToken();
+            console.log("Fetching orders with token");
 
-        if (data.success) {
-            setOrders(Array.isArray(data.orders) ? data.orders : []);
-        } else {
-            toast.error(data.message || "Failed to fetch orders");
+            const { data } = await axios.get('/api/order/seller-orders', {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 15000
+            });
+
+            if (data.success) {
+                const ordersData = Array.isArray(data.orders) ? data.orders : [];
+                setOrders(ordersData);
+                generateSalesReport(ordersData);
+            } else {
+                toast.error(data.message || "Failed to fetch orders");
+                setOrders([]);
+                setSalesReport({
+                    totalSales: 0,
+                    paidOrders: 0,
+                    pendingOrders: 0,
+                    monthlyData: [],
+                    dailyData: []
+                });
+            }
+        } catch (error) {
+            console.error("Fetch error:", {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+            toast.error(error.response?.data?.message || "Failed to fetch orders");
             setOrders([]);
+            setSalesReport({
+                totalSales: 0,
+                paidOrders: 0,
+                pendingOrders: 0,
+                monthlyData: [],
+                dailyData: []
+            });
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error("Fetch error:", {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data
+    };
+
+    // Generate sales report from orders data
+    const generateSalesReport = (ordersData) => {
+        if (!ordersData || ordersData.length === 0) {
+            setSalesReport({
+                totalSales: 0,
+                paidOrders: 0,
+                pendingOrders: 0,
+                monthlyData: [],
+                dailyData: []
+            });
+            return;
+        }
+
+        const now = new Date();
+        const filteredOrders = filterOrdersByDate(ordersData, dateFilter, customStartDate, customEndDate);
+
+        // Basic statistics
+        const totalSales = filteredOrders
+            .filter(order => order.paymentStatus === 'paid' || order.paymentStatus === 'refunded')
+            .reduce((sum, order) => sum + (order.amount || 0), 0);
+
+        const paidOrders = filteredOrders.filter(order => order.paymentStatus === 'paid').length;
+        const pendingOrders = filteredOrders.filter(order => order.paymentStatus === 'pending').length;
+
+        // Monthly data
+        const monthlyData = generateMonthlyData(filteredOrders);
+        
+        // Daily data (last 30 days)
+        const dailyData = generateDailyData(filteredOrders);
+
+        setSalesReport({
+            totalSales,
+            paidOrders,
+            pendingOrders,
+            monthlyData,
+            dailyData
         });
-        toast.error(error.response?.data?.message || "Failed to fetch orders");
-        setOrders([]);
-    } finally {
-        setLoading(false);
-    }
-};    const updateOrderStatus = async (orderId, newStatus) => {
+    };
+
+    // Filter orders based on date filter
+    const filterOrdersByDate = (ordersData, filter, startDate, endDate) => {
+        const now = new Date();
+        
+        switch (filter) {
+            case 'today':
+                return ordersData.filter(order => {
+                    const orderDate = new Date(order.date);
+                    return orderDate.toDateString() === now.toDateString();
+                });
+                
+            case 'week':
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - now.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+                return ordersData.filter(order => new Date(order.date) >= startOfWeek);
+                
+            case 'month':
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                return ordersData.filter(order => new Date(order.date) >= startOfMonth);
+                
+            case 'custom':
+                if (!startDate || !endDate) return ordersData;
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                return ordersData.filter(order => {
+                    const orderDate = new Date(order.date);
+                    return orderDate >= start && orderDate <= end;
+                });
+                
+            default:
+                return ordersData;
+        }
+    };
+
+    // Generate monthly sales data
+    const generateMonthlyData = (ordersData) => {
+        const monthlySales = {};
+        
+        ordersData.forEach(order => {
+            if (order.paymentStatus === 'paid' || order.paymentStatus === 'refunded') {
+                const date = new Date(order.date);
+                const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                if (!monthlySales[monthYear]) {
+                    monthlySales[monthYear] = 0;
+                }
+                monthlySales[monthYear] += order.amount || 0;
+            }
+        });
+
+        return Object.entries(monthlySales)
+            .map(([month, sales]) => ({ month, sales }))
+            .sort((a, b) => a.month.localeCompare(b.month));
+    };
+
+    // Generate daily sales data for last 30 days
+    const generateDailyData = (ordersData) => {
+        const dailySales = {};
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        ordersData.forEach(order => {
+            if (order.paymentStatus === 'paid' || order.paymentStatus === 'refunded') {
+                const orderDate = new Date(order.date);
+                if (orderDate >= thirtyDaysAgo) {
+                    const dateStr = orderDate.toISOString().split('T')[0];
+                    
+                    if (!dailySales[dateStr]) {
+                        dailySales[dateStr] = 0;
+                    }
+                    dailySales[dateStr] += order.amount || 0;
+                }
+            }
+        });
+
+        // Fill in missing days with 0 sales
+        const result = [];
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            result.push({
+                date: dateStr,
+                sales: dailySales[dateStr] || 0
+            });
+        }
+
+        return result;
+    };
+
+    // Apply date filter
+    const applyDateFilter = () => {
+        generateSalesReport(orders);
+    };
+
+    const updateOrderStatus = async (orderId, newStatus) => {
         try {
             const token = await getToken();
             
@@ -76,9 +252,11 @@ const fetchSellerOrders = async () => {
             });
 
             if (data.success) {
-                setOrders(prev => prev.map(order => 
-                    order._id === orderId ? { ...order, status: newStatus } : order
-                ));
+                const updatedOrders = orders.map(order => 
+                    order._id === orderId ? data.order : order
+                );
+                setOrders(updatedOrders);
+                generateSalesReport(updatedOrders);
                 toast.success(`Order status updated to ${newStatus}`);
             } else {
                 toast.error(data.message || "Failed to update status");
@@ -103,9 +281,11 @@ const fetchSellerOrders = async () => {
             });
 
             if (data.success) {
-                setOrders(prev => prev.map(order => 
-                    order._id === orderId ? { ...order, paymentStatus: newPaymentStatus } : order
-                ));
+                const updatedOrders = orders.map(order => 
+                    order._id === orderId ? data.order : order
+                );
+                setOrders(updatedOrders);
+                generateSalesReport(updatedOrders);
                 toast.success(`Payment status updated to ${newPaymentStatus}`);
             } else {
                 toast.error(data.message || "Failed to update payment status");
@@ -136,13 +316,11 @@ const fetchSellerOrders = async () => {
             });
 
             if (data.success) {
-                setOrders(prev => prev.map(order => 
-                    order._id === cancellingOrder ? { 
-                        ...order, 
-                        status: "cancelled", 
-                        cancellationReason: cancelReason 
-                    } : order
-                ));
+                const updatedOrders = orders.map(order => 
+                    order._id === cancellingOrder ? data.order : order
+                );
+                setOrders(updatedOrders);
+                generateSalesReport(updatedOrders);
                 toast.success("Order cancelled successfully!");
                 setCancellingOrder(null);
                 setCancelReason("");
@@ -152,6 +330,43 @@ const fetchSellerOrders = async () => {
         } catch (error) {
             console.error("Error cancelling order:", error);
             toast.error(error.response?.data?.message || "Failed to cancel order");
+        }
+    };
+
+    const handleRefund = async () => {
+        if (!refundReason.trim()) {
+            toast.error("Please select a refund reason");
+            return;
+        }
+
+        try {
+            const token = await getToken();
+            
+            const { data } = await axios.put('/api/order/seller-orders', {
+                orderId: refundingOrder,
+                paymentStatus: "refunded",
+                refundReason: refundReason
+            }, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                }
+            });
+
+            if (data.success) {
+                const updatedOrders = orders.map(order => 
+                    order._id === refundingOrder ? data.order : order
+                );
+                setOrders(updatedOrders);
+                generateSalesReport(updatedOrders);
+                toast.success("Order refunded successfully!");
+                setRefundingOrder(null);
+                setRefundReason("");
+            } else {
+                toast.error(data.message || "Failed to refund order");
+            }
+        } catch (error) {
+            console.error("Error refunding order:", error);
+            toast.error(error.response?.data?.message || "Failed to refund order");
         }
     };
 
@@ -177,6 +392,12 @@ const fetchSellerOrders = async () => {
         }
     }, [user]);
 
+    useEffect(() => {
+        if (orders.length > 0) {
+            generateSalesReport(orders);
+        }
+    }, [dateFilter, customStartDate, customEndDate]);
+
     const formatOrderId = (order) => {
         if (!order?._id) return "N/A";
         return `#${order._id.slice(-8).toUpperCase()}`;
@@ -195,6 +416,18 @@ const fetchSellerOrders = async () => {
         }
     };
 
+    const formatTime = (date) => {
+        if (!date) return "";
+        try {
+            return new Date(date).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return "";
+        }
+    };
+
     const getTotalItems = (order) => {
         if (!order?.items) return 0;
         return order.items.reduce((total, item) => total + (item.quantity || 0), 0);
@@ -205,19 +438,125 @@ const fetchSellerOrders = async () => {
         return item.product.image[0];
     };
 
-    // Format shipping address safely
     const formatShippingAddress = (address) => {
         if (!address) return "N/A";
         const { addressLine1, city, state, pincode, country } = address;
         const formattedAddress = `${addressLine1 || ""}, ${city || ""}, ${state || ""} ${pincode || ""}${country ? ", " + country : ""}`.trim();
-        return formattedAddress || "N/A"; // Return "N/A" if all fields are empty
+        return formattedAddress || "N/A";
     };
 
     return (
         <div className="flex-1 min-h-screen flex flex-col justify-between">
             {loading ? <Loading /> : (
                 <div className="md:p-10 p-4 space-y-5">
-                    <h2 className="text-2xl font-bold">Order Management</h2>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 className="text-2xl font-bold">Order Management</h2>
+                        <button
+                            onClick={() => setShowSalesReport(!showSalesReport)}
+                            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+                        >
+                            {showSalesReport ? "Hide Sales Report" : "Show Sales Report"}
+                        </button>
+                    </div>
+                    
+                    {/* Sales Report Section */}
+                    {showSalesReport && (
+                        <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
+                            <h3 className="text-xl font-bold mb-4">Sales Analytics Report</h3>
+                            
+                            {/* Date Filter */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <select
+                                    value={dateFilter}
+                                    onChange={(e) => setDateFilter(e.target.value)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg"
+                                >
+                                    {dateFilterOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                
+                                {dateFilter === 'custom' && (
+                                    <>
+                                        <input
+                                            type="date"
+                                            value={customStartDate}
+                                            onChange={(e) => setCustomStartDate(e.target.value)}
+                                            className="px-4 py-2 border border-gray-300 rounded-lg"
+                                        />
+                                        <input
+                                            type="date"
+                                            value={customEndDate}
+                                            onChange={(e) => setCustomEndDate(e.target.value)}
+                                            className="px-4 py-2 border border-gray-300 rounded-lg"
+                                        />
+                                        <button
+                                            onClick={applyDateFilter}
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                        >
+                                            Apply Filter
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                            
+                            {/* Sales Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <p className="text-blue-600 font-semibold">Total Sales</p>
+                                    <p className="text-2xl font-bold">{currency}{salesReport.totalSales.toFixed(2)}</p>
+                                    <p className="text-sm text-gray-600">Completed orders</p>
+                                </div>
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <p className="text-green-600 font-semibold">Paid Orders</p>
+                                    <p className="text-2xl font-bold">{salesReport.paidOrders}</p>
+                                    <p className="text-sm text-gray-600">Successful payments</p>
+                                </div>
+                                <div className="bg-yellow-50 p-4 rounded-lg">
+                                    <p className="text-yellow-600 font-semibold">Pending Payments</p>
+                                    <p className="text-2xl font-bold">{salesReport.pendingOrders}</p>
+                                    <p className="text-sm text-gray-600">Awaiting payment</p>
+                                </div>
+                                <div className="bg-purple-50 p-4 rounded-lg">
+                                    <p className="text-purple-600 font-semibold">Total Orders</p>
+                                    <p className="text-2xl font-bold">
+                                        {filterOrdersByDate(orders, dateFilter, customStartDate, customEndDate).length}
+                                    </p>
+                                    <p className="text-sm text-gray-600">All orders</p>
+                                </div>
+                            </div>
+                            
+                            {/* Monthly Report */}
+                            <div className="mb-6">
+                                <h4 className="font-semibold mb-3">Monthly Sales</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {salesReport.monthlyData.slice(-6).map((monthData, index) => (
+                                        <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                                            <p className="font-medium">{monthData.month}</p>
+                                            <p className="text-lg font-bold text-green-600">
+                                                {currency}{monthData.sales.toFixed(2)}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {/* Recent Daily Sales */}
+                            <div>
+                                <h4 className="font-semibold mb-3">Recent Daily Sales (Last 7 Days)</h4>
+                                <div className="space-y-2">
+                                    {salesReport.dailyData.slice(-7).map((dayData, index) => (
+                                        <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                            <span>{formatDate(dayData.date)}</span>
+                                            <span className="font-semibold">{currency}{dayData.sales.toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     
                     {/* Search and Filter */}
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -315,7 +654,7 @@ const fetchSellerOrders = async () => {
                                             <label className="block text-sm font-medium mb-2">Order Status</label>
                                             <div className="flex flex-wrap gap-2">
                                                 {statusOptions.map((status) => {
-                                                    console.log(`Rendering status button: ${status.value}`); // Debug log
+                                                    console.log(`Rendering status button: ${status.value}`);
                                                     return (
                                                         <button
                                                             key={status.value}
@@ -337,7 +676,6 @@ const fetchSellerOrders = async () => {
                                                         </button>
                                                     );
                                                 })}
-                                                {/* Dedicated Cancel Button for visibility */}
                                                 <button
                                                     onClick={() => setCancellingOrder(order._id)}
                                                     disabled={order.status === "cancelled"}
@@ -358,7 +696,13 @@ const fetchSellerOrders = async () => {
                                                 {paymentOptions.map((payment) => (
                                                     <button
                                                         key={payment.value}
-                                                        onClick={() => updatePaymentStatus(order._id, payment.value)}
+                                                        onClick={() => {
+                                                            if (payment.value === "refunded") {
+                                                                setRefundingOrder(order._id);
+                                                            } else {
+                                                                updatePaymentStatus(order._id, payment.value);
+                                                            }
+                                                        }}
                                                         disabled={order.paymentStatus === payment.value}
                                                         className={`px-3 py-2 rounded text-sm border ${
                                                             order.paymentStatus === payment.value 
@@ -369,6 +713,17 @@ const fetchSellerOrders = async () => {
                                                         {payment.label}
                                                     </button>
                                                 ))}
+                                                <button
+                                                    onClick={() => setRefundingOrder(order._id)}
+                                                    disabled={order.paymentStatus === "refunded"}
+                                                    className={`px-3 py-2 rounded text-sm border ${
+                                                        order.paymentStatus === "refunded"
+                                                            ? 'bg-orange-100 text-orange-800 border-current font-bold'
+                                                            : 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100'
+                                                    }`}
+                                                >
+                                                    Refund Payment
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -427,6 +782,13 @@ const fetchSellerOrders = async () => {
                                             <strong>Cancellation Reason:</strong> {order.cancellationReason}
                                         </div>
                                     )}
+
+                                    {order.refundReason && (
+                                        <div className="mt-3 p-3 bg-orange-50 rounded text-sm">
+                                            <strong>Refund Reason:</strong> {order.refundReason}<br />
+                                            <strong>Refunded on:</strong> {formatDate(order.refundDate)} at {formatTime(order.refundDate)}
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         )}
@@ -465,6 +827,47 @@ const fetchSellerOrders = async () => {
                                 onClick={() => {
                                     setCancellingOrder(null);
                                     setCancelReason("");
+                                }}
+                                className="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Refund Order Modal */}
+            {refundingOrder && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold mb-4">Refund Payment</h3>
+                        <div className="space-y-2 mb-4">
+                            {["Product defective", "Wrong item", "Customer request", "Other"].map((reason) => (
+                                <label key={reason} className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="refundReason"
+                                        value={reason}
+                                        checked={refundReason === reason}
+                                        onChange={(e) => setRefundReason(e.target.value)}
+                                        className="text-orange-600"
+                                    />
+                                    <span>{reason}</span>
+                                </label>
+                            ))}
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleRefund}
+                                className="flex-1 bg-orange-600 text-white py-2 rounded hover:bg-orange-700"
+                            >
+                                Confirm
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setRefundingOrder(null);
+                                    setRefundReason("");
                                 }}
                                 className="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400"
                             >

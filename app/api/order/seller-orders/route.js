@@ -111,7 +111,7 @@ export async function PUT(request) {
         await connectDB();
 
         const body = await request.json();
-        const { orderId, status, paymentStatus, cancellationReason } = body;
+        const { orderId, status, paymentStatus, cancellationReason, refundReason } = body;
 
         if (!orderId) {
             console.error("Missing orderId in request body", { timestamp: new Date().toISOString() });
@@ -142,6 +142,11 @@ export async function PUT(request) {
         if (status) updateData.status = status;
         if (paymentStatus) updateData.paymentStatus = paymentStatus;
         if (cancellationReason) updateData.cancellationReason = cancellationReason;
+        if (refundReason) updateData.refundReason = refundReason;
+
+        if (paymentStatus === 'refunded' && !order.refundDate) {
+            updateData.refundDate = new Date();
+        }
 
         const updatedOrder = await Order.findByIdAndUpdate(
             orderId,

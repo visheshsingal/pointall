@@ -37,9 +37,15 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: 'pending',
-        enum: ['pending', 'paid', 'failed']
+        enum: ['pending', 'paid', 'failed', 'refunded']
     },
     cancellationReason: {
+        type: String
+    },
+    refundDate: {
+        type: Date
+    },
+    refundReason: {
         type: String
     },
     date: { 
